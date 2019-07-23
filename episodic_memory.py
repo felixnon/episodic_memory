@@ -34,20 +34,24 @@ circleEdges = 128                   # amount of edges to draw the circle
 # TEXT MESSAGES
 #
 instructionMessage = '''In diesem Experiment wird jeweils ein Wort mit einer Position auf einem Kreis verknüpft. Du musst dir merken, zu welchem Wort welche Position gehört.
-Das Experiment besteht aus mehreren Blöcken. Pro Block werden Dir {} Positions-Wort-Verbindungen präsentierst. Anschließend wirst du abgefragt. Dazu wird dir das Wort gezeigt und du musst die Position auf dem Kreis bestimmen.
+Das Experiment besteht aus mehreren Blöcken. Pro Block werden Dir {nTrialsPerBlock} Positions-Wort-Verbindungen präsentierst. Anschließend wirst du abgefragt. Dazu wird dir das Wort gezeigt und du musst die Position auf dem Kreis bestimmen.
 Wir beginnen mit ein paar Übungsdurchläufen.
 
 Drücke eine beliebige Taste wenn du bereit bist.'''
 
-studyBlockStartMessage = '''Block {} / {}
->Lernphase<
+studyBlockStartMessage = '''
+                        Block {currentBlock}/{nBlocks}
+
+                        >Lernphase<
 
 Versuche Dir zu merken welches Wort mit welcher Position auf dem Kreis verknüpft war.
 
 Drücke eine beliebige Taste wenn du bereit bist.'''
 
-studyBlockCompleteMessage = '''Block {} / {}
->Testphase<
+studyBlockCompleteMessage = '''
+                        Block {currentBlock}/{nTrialsPerBlock}
+
+                        >Testphase<
 
 Erinnere Dich welche Position auf dem Kreis zu welchem Wort gehört. Du kannst die Position mit einem Mausklick festlegen. Die Position kannst Du beliebig oft korriegieren.
 Um Deine Auswahl zu bestätigen musst Du die Enter-Taste drücken.
@@ -66,11 +70,15 @@ selectPointMessage = '''Wähle mit der Maus die mit dem gezeigten Wort verknüpf
 Du kannst die Position beliebig oft korriegieren. 
 Deine Auswahl kannst du mit der Enter-Taste bestätigen.'''
 
-nextStudyTrialMessage = '''Lernphase Trial {}/{}
+nextStudyTrialMessage = '''
+                Lernphase Trial {currentTrial}/{nTrialsPerBlock}
+
 Drücke eine beliebige Taste das Trial zu starten.'''
 
 
-nextTestTrialMessage = '''Testphase Trial {}/{}
+nextTestTrialMessage = '''
+                Testphase Trial {currentTrial}/{nTrialsPerBlock}
+                
 Drücke eine beliebige Taste zum fortfahren.'''
 
 m = monitors.Monitor("monitor", distance=90, autoLog=True)
@@ -101,8 +109,6 @@ currentTrial = 0
 with open(resultFile, "w") as f:
     print("subject_nr,id,block,trial,isTest,word,position,selectedPos,clickPosX,clickPosY,rt,rtFinal", file=f)
 
-instructions = visual.TextStim(win, instructionMessage, wrapWidth=1000, alignVert='center')
-
 # load the words from file and randomize them
 words = []
 with open(wordFile, "r") as f:
@@ -129,6 +135,14 @@ if nBlocks * nTrialsPerBlock > len(stimuli):
 #
 #
 #
+
+def evaluateText(text):
+    text = text.format(nBlocks=nBlocks,
+                       nTrialsPerBlock=nTrialsPerBlock,
+                       currentBlock=currentBlock+1, # add 1 so counting starts with 1 instead of 0
+                       currentTrial=currentTrial+1)
+                       
+    return text
 
 def check_esc():
     if event.getKeys(['escape']):
@@ -205,14 +219,21 @@ def selectPointOnCircle():
     return pos
     
     
-def writeText(text, duration = None):
+def writeText(text, duration = None, font='', pos=(0.0, 0.0), depth=0, rgb=None, color=(1.0, 1.0, 1.0), 
+                colorSpace='rgb', opacity=1.0, contrast=1.0, units='', ori=0.0, height=None, antialias=True, 
+                bold=False, italic=False, alignHoriz='center', alignVert='center', fontFiles=(), wrapWidth=None, 
+                flipHoriz=False, flipVert=False, languageStyle='LTR', name=None, autoLog=None):
     '''
     displays an text on the screen.
     Parameters:
         text: the displayed text
         duration: the duration the text is displayed. if none, wait for key press
     '''
-    textStim = visual.TextStim(win, text)
+    text = evaluateText(text)
+    textStim = visual.TextStim(win, text, font, pos, depth, rgb, color, 
+                colorSpace, opacity, contrast, units, ori, height, antialias, 
+                bold, italic, alignHoriz, alignVert, fontFiles, wrapWidth, 
+                flipHoriz, flipVert, languageStyle, name, autoLog)
     textStim.draw()
     win.flip()
     
@@ -261,9 +282,8 @@ def startPracticeTrials():
 # Experiment Procedure
 # 
 
-instructions.draw()
-win.flip()
-event.waitKeys()
+writeText(instructionMessage, wrapWidth=1000)
+
 # start the practice trials
 #startPracticeTrials()
 
