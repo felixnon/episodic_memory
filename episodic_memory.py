@@ -258,7 +258,24 @@ def writeText(text, duration = None, font='', pos=(0.0, 0.0), depth=0, rgb=None,
     check_esc()
     win.flip()
 
-def studyTrial(word, angle):
+def addTrialToCSV(subject_nr=subject_nr,
+                  id=currentBlock*nTrialsPerBlock+currentTrial,
+                  block=currentBlock,
+                  trial=currentTrial,
+                  isTest=None,
+                  word=None,
+                  position=None,
+                  selectedPos=None,
+                  clickPosX=None,
+                  clickPosY=None,
+                  rt=-1,
+                  rtFinal=-1):
+    preparedString = "{},{},{},{},{},{},{},{},{},{},{},{}".format(subject_nr,id,block,trial,isTest,word,position,selectedPos,clickPosX,clickPosY,rt,rtFinal)
+    with open(resultFile, "w") as f:
+        print(preparedString, file=f)
+
+
+def studyTrial(word, angle, isPractice=False):
     writeText(nextStudyTrialMessage)
     writeText("+", 2)
     core.wait(1)
@@ -268,7 +285,7 @@ def studyTrial(word, angle):
     writeText(word, 2)
     markerAngle = selectPointOnCircle()
     
-def testTrial(word, angle):
+def testTrial(word, angle, isPractice=False):
     writeText(nextTestTrialMessage)
     writeText("+", 1)
     core.wait(0.5)
@@ -279,13 +296,13 @@ def testTrial(word, angle):
 def startPracticeTrials():
     # study trials
     for stimulus in practiceStimuli:
-        studyTrial(*stimulus)
+        studyTrial(*stimulus, isPractice=True)
         
     writeText(studyBlockCompleteMessage)
     # test trials
     random.shuffle(practiceStimuli)
     for stimulus in practiceStimuli:
-        testTrial(*stimulus)
+        testTrial(*stimulus, isPractice=True)
     
     writeText(practiceCompleteMessage)
 
