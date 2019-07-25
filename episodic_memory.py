@@ -171,6 +171,19 @@ def drawCircleWithCross(degrees):
     
     win.flip()
     
+    
+def calculateError(alpha, beta):
+    '''
+    calculates the distance in degrees of the angles alpha and beta
+    Parameters:
+        alpha: angle in degrees
+        beta:  angle in degrees
+    '''
+    phi = abs(beta-alpha) % 360
+    distance = phi if phi < 180 else 360 - phi
+    
+    return distance
+
 def degreesToPos(degrees):
     # calculate the position of the cross using the radius and angle
     rad = degrees * (math.pi/180)
