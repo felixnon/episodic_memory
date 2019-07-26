@@ -16,8 +16,8 @@ subject_nr = 1# myDlg.show()[0]
 #
 # EXPERIMENT SETTINGS
 #
-nBlocks = 2                        # amount of study and test blocks
-nTrialsPerBlock = 3                # amount of word location pairs per block
+nBlocks = 1                        # amount of study and test blocks
+nTrialsPerBlock = 1                # amount of word location pairs per block
 
 #
 # TECHNICAL SETTINGS
@@ -107,7 +107,7 @@ currentTrial = 0
 
 # Create the results file and add the csv header containing the needed collumns
 with open(resultFile, "w") as f:
-    print("subject_nr,id,block,trial,isTest,word,position,selectedPos,clickPosX,clickPosY,rt,rtFinal", file=f)
+    print("subject_nr,id,block,trial,isTest,word,angle,selectedAngle,error,clickPosX,clickPosY,rt,rtFinal", file=f)
 
 # load the words from file and randomize them
 words = []
@@ -207,7 +207,11 @@ def selectPointOnCircle():
             
     # get an instance of the mouse in order to get clicks and position
     mouse = event.Mouse()
-    # 
+    mouse.clickReset()
+    clock.reset()
+    
+    rts = []
+    rtFinal = None
     pos = (None, None)
     
     while True:
@@ -218,18 +222,26 @@ def selectPointOnCircle():
         
         text.draw()
         
-        buttons = mouse.getPressed()
+        buttons, rt = mouse.getPressed(getTime=True)
         if buttons[0]:
             pos = degreesToPos(posToDegrees(mouse.getPos()))
+            rts.append(rt[0])
         if pos[0] != None and pos[1] != None:
             cross = visual.Circle(win, 10, lineWidth=1, pos=pos, lineColor='Red', fillColor='Red')
             cross.draw()
             
-            if "return" in event.getKeys():
-                win.flip()
-                break
+            keypresses = event.getKeys(keyList=["return"], timeStamped=clock)
+            if keypresses:
+                key, rt = keypresses[0]
+                if key == "return" :
+                    rtFinal = rt
+                    win.flip()
+                    break
         win.flip()
-    return pos
+        
+    angle = posToDegrees(pos)
+    print(angle, rts[0], rtFinal)
+    return angle, rts[0], rtFinal
     
     
 def writeText(text, duration = None, font='', pos=(0.0, 0.0), depth=0, rgb=None, color=(1.0, 1.0, 1.0), 
@@ -264,13 +276,14 @@ def addTrialToCSV(subject_nr=subject_nr,
                   trial=currentTrial,
                   isTest=None,
                   word=None,
-                  position=None,
-                  selectedPos=None,
+                  angle=None,
+                  selectedAngle=None,
+                  error=None,
                   clickPosX=None,
                   clickPosY=None,
                   rt=-1,
                   rtFinal=-1):
-    preparedString = "{},{},{},{},{},{},{},{},{},{},{},{}".format(subject_nr,id,block,trial,isTest,word,position,selectedPos,clickPosX,clickPosY,rt,rtFinal)
+    preparedString = "{},{},{},{},{},{},{},{},{},{},{},{},{}".format(subject_nr,id,block,trial,isTest,word,angle,selectedAngle,error,clickPosX,clickPosY,rt,rtFinal)
     with open(resultFile, "w") as f:
         print(preparedString, file=f)
 
@@ -283,7 +296,18 @@ def studyTrial(word, angle, isPractice=False):
     core.wait(2)
     win.flip()
     writeText(word, 2)
-    markerAngle = selectPointOnCircle()
+    markerAngle, rt, rtFinal = selectPointOnCircle()
+    error = calculateError(angle, markerAngle)
+    
+    addTrialToCSV(isTest=False,
+                  word=word,
+                  angle=angle,
+                  selectedAngle=markerAngle,
+                  error=error,
+                  #clickPosX=clickPosX,
+                  #clickPosY=clickPosY,
+                  rt=rt,
+                  rtFinal=rtFinal)
     
 def testTrial(word, angle, isPractice=False):
     writeText(nextTestTrialMessage)
@@ -291,7 +315,18 @@ def testTrial(word, angle, isPractice=False):
     core.wait(0.5)
     writeText(word, 2)
     core.wait(1)
-    markerAngle = selectPointOnCircle()
+    markerAngle, rt, rtFinal = selectPointOnCircle()
+    error = calculateError(angle, markerAngle)
+    
+    addTrialToCSV(isTest=False,
+                  word=word,
+                  angle=angle,
+                  selectedAngle=markerAngle,
+                  error=error,
+                  #clickPosX=clickPosX,
+                  #clickPosY=clickPosY,
+                  rt=rt,
+                  rtFinal=rtFinal)
     
 def startPracticeTrials():
     # study trials
