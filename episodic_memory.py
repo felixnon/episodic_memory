@@ -16,8 +16,8 @@ subject_nr = 1# myDlg.show()[0]
 #
 # EXPERIMENT SETTINGS
 #
-nBlocks = 1                        # amount of study and test blocks
-nTrialsPerBlock = 1                # amount of word location pairs per block
+nBlocks = 1                      # amount of study and test blocks
+nTrialsPerBlock = 2                # amount of word location pairs per block
 
 #
 # TECHNICAL SETTINGS
@@ -197,7 +197,7 @@ def degreesToPos(degrees):
 def posToDegrees(pos):
     rad = math.atan2(pos[1], pos[0])
     degrees = rad * 180 / math.pi
-    
+    degrees = (degrees + 360) % 360
     return degrees
 
     
@@ -224,6 +224,7 @@ def selectPointOnCircle():
         
         buttons, rt = mouse.getPressed(getTime=True)
         if buttons[0]:
+            event.clearEvents("keyboard")
             pos = degreesToPos(posToDegrees(mouse.getPos()))
             rts.append(rt[0])
         if pos[0] != None and pos[1] != None:
@@ -271,9 +272,9 @@ def writeText(text, duration = None, font='', pos=(0.0, 0.0), depth=0, rgb=None,
     win.flip()
 
 def addTrialToCSV(subject_nr=subject_nr,
-                  id=currentBlock*nTrialsPerBlock+currentTrial,
-                  block=currentBlock,
-                  trial=currentTrial,
+                  id=-1,
+                  block=-1,
+                  trial=-1,
                   isTest=None,
                   word=None,
                   angle=None,
@@ -283,8 +284,16 @@ def addTrialToCSV(subject_nr=subject_nr,
                   clickPosY=None,
                   rt=-1,
                   rtFinal=-1):
+    
+    if id == -1:
+        id = currentBlock*nTrialsPerBlock+currentTrial
+    if block == -1:
+        block = currentBlock
+    if trial == -1:
+        trial = currentTrial
+    
     preparedString = "{},{},{},{},{},{},{},{},{},{},{},{},{}".format(subject_nr,id,block,trial,isTest,word,angle,selectedAngle,error,clickPosX,clickPosY,rt,rtFinal)
-    with open(resultFile, "w") as f:
+    with open(resultFile, "a") as f:
         print(preparedString, file=f)
 
 
@@ -318,7 +327,7 @@ def testTrial(word, angle, isPractice=False):
     markerAngle, rt, rtFinal = selectPointOnCircle()
     error = calculateError(angle, markerAngle)
     
-    addTrialToCSV(isTest=False,
+    addTrialToCSV(isTest=True,
                   word=word,
                   angle=angle,
                   selectedAngle=markerAngle,
@@ -342,7 +351,6 @@ def startPracticeTrials():
     writeText(practiceCompleteMessage)
 
 
-
 #
 # Experiment Procedure
 # 
@@ -361,8 +369,8 @@ for block in range(nBlocks):
     
     # study trials
     writeText(studyBlockStartMessage)
-    #for stimulus in blockStimuli:
-    #    studyTrial(*stimulus)
+    
+    
     for trial in range(nTrialsPerBlock):
         currentTrial = trial
         studyTrial(*blockStimuli[trial])
@@ -372,8 +380,7 @@ for block in range(nBlocks):
     
     # test trials
     random.shuffle(blockStimuli)
-    #for stimulus in blockStimuli:
-    #    testTrial(*stimulus)
+    
     for trial in range(nTrialsPerBlock):
         currentTrial = trial
         testTrial(*blockStimuli[trial])
