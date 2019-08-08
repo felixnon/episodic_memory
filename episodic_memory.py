@@ -4,6 +4,7 @@ from psychopy.tools.monitorunittools import posToPix
 
 import random
 import math
+import os
 
 random.seed()
 
@@ -11,20 +12,20 @@ random.seed()
 myDlg = gui.Dlg(title=" ")
 myDlg.addText('Participant info')
 myDlg.addField('Subject number:')
-subject_nr = 1# myDlg.show()[0]
+subject_nr = myDlg.show()[0]
 
 #
 # EXPERIMENT SETTINGS
 #
-nBlocks = 1                      # amount of study and test blocks
-nTrialsPerBlock = 2                # amount of word location pairs per block
+nBlocks = 2                      # amount of study and test blocks
+nTrialsPerBlock = 2              # amount of word location pairs per block
+doPracticeTrials = False         # whether the experiment should start with practice trials
 
 #
 # TECHNICAL SETTINGS
 #
-continueKey = "right"               # the key to proceed in the experiment
 resultDir = "results/"              # save results in this directory
-resultFile = str(subject_nr) + ".csv" # name of the file containing a participants results
+resultFile = resultDir + str(subject_nr) + ".csv" # name of the file containing a participants results
 wordFile = "words.txt"              # file containing the words
 circleRadius = 300                  # radius of the presented circle
 circleLineWidth = 10                # width of the circle outline
@@ -81,6 +82,13 @@ nextTestTrialMessage = '''
                 
 Drücke eine beliebige Taste zum fortfahren.'''
 
+retryVerification = '''Deine Antwort war zu ungenau. Probiere es nochmal.
+Drücke eine beliebige Taste zum fortfahren.'''
+
+#
+# SETUP EXPERIMENT
+#
+
 m = monitors.Monitor("monitor", distance=90, autoLog=True)
 m.save()
 win = visual.Window(
@@ -101,11 +109,16 @@ win.fullscr=True
 win.winHandle.set_fullscreen(True)
 win.flip()
 
-# keep increasing these variables.
+# These variables will keep track of the current block and trial number
 currentBlock = 0
 currentTrial = 0
 
 # Create the results file and add the csv header containing the needed collumns
+try:
+    os.makedirs(resultDir)
+except FileExistsError:
+    # directory already exists
+    pass
 with open(resultFile, "w") as f:
     print("subject_nr,id,block,trial,isTest,word,angle,selectedAngle,error,clickPosX,clickPosY,rt,rtFinal", file=f)
 
@@ -115,33 +128,29 @@ with open(wordFile, "r") as f:
     words = f.read().splitlines()
 random.shuffle(words)
 
-# pair words with a random location on circle outline
+# create the stimuli pairs.
+# to do so, pair words with a random location on circle outline
 stimuli = [(word, random.randint(0, 359)) for word in words]
 
+# the stimuli used for the practice trials
 practiceStimuli = [("word1", 15),
                    ("word2", 30),
                    ("word3", 45),
                    ("word4", 60)]
-                   #("word5", 75),
-                   #("word6", 90),
-                   #("word7", 105),
-                   #("word8", 120),
-                   #("word9", 135)]
 
 # make sure there are not more trials than words
 if nBlocks * nTrialsPerBlock > len(stimuli):
     raise Exception("There are more trials than words. Use larger word list or less trials.")
 
 #
-#
+# HELPER FUNCTIONS
 #
 
 def evaluateText(text):
     text = text.format(nBlocks=nBlocks,
                        nTrialsPerBlock=nTrialsPerBlock,
                        currentBlock=currentBlock+1, # add 1 so counting starts with 1 instead of 0
-                       currentTrial=currentTrial+1)
-                       
+                       currentTrial=currentTrial+1)                       
     return text
 
 def check_esc():
@@ -316,6 +325,14 @@ def studyTrial(word, angle, isPractice=False):
     markerAngle, rt, rtFinal, clickPosX, clickPosY = selectPointOnCircle()
     error = calculateError(angle, markerAngle)
     
+    while error > 6:
+        writeText(retryVerification)
+        drawCircleWithCross(angle)
+        core.wait(0.25)
+        win.flip()
+        markerAngle, rt, rtFinal, clickPosX, clickPosY = selectPointOnCircle()
+        error = calculateError(angle, markerAngle)
+        
     addTrialToCSV(isTest=False,
                   word=word,
                   angle=angle,
@@ -366,9 +383,10 @@ def startPracticeTrials():
 writeText(instructionMessage, wrapWidth=1000)
 
 # start the practice trials
-#startPracticeTrials()
+if doPracticeTrials:
+    startPracticeTrials()
 
-# start the experiment
+# start the actual experiment
 for block in range(nBlocks):
     currentBlock = block
 
@@ -390,7 +408,7 @@ for block in range(nBlocks):
     random.shuffle(blockStimuli)
     
     for trial in range(nTrialsPerBlock):
-        currentTrial = trial
+        currentTrial = trial + nTrialsPerBlock
         testTrial(*blockStimuli[trial])
         
 writeText(experimentCompleteMessage)
