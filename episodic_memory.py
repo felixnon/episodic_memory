@@ -96,7 +96,7 @@ win = visual.Window(
 clock = core.Clock()
 win.winHandle.set_fullscreen(False) 
 win.flip()
-
+win.mouseVisible = False
 win.fullscr=True
 win.winHandle.set_fullscreen(True)
 win.flip()
@@ -202,17 +202,22 @@ def posToDegrees(pos):
 
     
 def selectPointOnCircle():
-
+    
     text = visual.TextStim(win, selectPointMessage)
             
     # get an instance of the mouse in order to get clicks and position
     mouse = event.Mouse()
     mouse.clickReset()
+    mouse.setPos((0, 0))
     clock.reset()
+    
+    win.mouseVisible = True
     
     rts = []
     rtFinal = None
     pos = (None, None)
+    clickX = 0
+    clickY = 0
     
     while True:
         check_esc()
@@ -226,6 +231,7 @@ def selectPointOnCircle():
         if buttons[0]:
             event.clearEvents("keyboard")
             pos = degreesToPos(posToDegrees(mouse.getPos()))
+            clickX, clickY = mouse.getPos()
             rts.append(rt[0])
         if pos[0] != None and pos[1] != None:
             cross = visual.Circle(win, 10, lineWidth=1, pos=pos, lineColor='Red', fillColor='Red')
@@ -241,8 +247,10 @@ def selectPointOnCircle():
         win.flip()
         
     angle = posToDegrees(pos)
-    print(angle, rts[0], rtFinal)
-    return angle, rts[0], rtFinal
+    
+    win.mouseVisible = False
+    
+    return angle, rts[0], rtFinal, clickX, clickY
     
     
 def writeText(text, duration = None, font='', pos=(0.0, 0.0), depth=0, rgb=None, color=(1.0, 1.0, 1.0), 
@@ -305,7 +313,7 @@ def studyTrial(word, angle, isPractice=False):
     core.wait(2)
     win.flip()
     writeText(word, 2)
-    markerAngle, rt, rtFinal = selectPointOnCircle()
+    markerAngle, rt, rtFinal, clickPosX, clickPosY = selectPointOnCircle()
     error = calculateError(angle, markerAngle)
     
     addTrialToCSV(isTest=False,
@@ -313,8 +321,8 @@ def studyTrial(word, angle, isPractice=False):
                   angle=angle,
                   selectedAngle=markerAngle,
                   error=error,
-                  #clickPosX=clickPosX,
-                  #clickPosY=clickPosY,
+                  clickPosX=clickPosX,
+                  clickPosY=clickPosY,
                   rt=rt,
                   rtFinal=rtFinal)
     
@@ -324,7 +332,7 @@ def testTrial(word, angle, isPractice=False):
     core.wait(0.5)
     writeText(word, 2)
     core.wait(1)
-    markerAngle, rt, rtFinal = selectPointOnCircle()
+    markerAngle, rt, rtFinal, clickPosX, clickPosY = selectPointOnCircle()
     error = calculateError(angle, markerAngle)
     
     addTrialToCSV(isTest=True,
@@ -332,8 +340,8 @@ def testTrial(word, angle, isPractice=False):
                   angle=angle,
                   selectedAngle=markerAngle,
                   error=error,
-                  #clickPosX=clickPosX,
-                  #clickPosY=clickPosY,
+                  clickPosX=clickPosX,
+                  clickPosY=clickPosY,
                   rt=rt,
                   rtFinal=rtFinal)
     
