@@ -74,7 +74,7 @@ Deine Auswahl kannst du mit der Enter-Taste bestätigen.'''
 nextStudyTrialMessage = '''
                 Lernphase Trial {currentTrial}/{nTrialsPerBlock}
 
-Drücke eine beliebige Taste das Trial zu starten.'''
+Drücke eine beliebige Taste, um das Trial zu starten.'''
 
 
 nextTestTrialMessage = '''
