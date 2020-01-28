@@ -408,7 +408,7 @@ for block in range(nBlocks):
     random.shuffle(blockStimuli)
     
     for trial in range(nTrialsPerBlock):
-        currentTrial = trial + nTrialsPerBlock
+        currentTrial = trial# + nTrialsPerBlock
         testTrial(*blockStimuli[trial])
         
 writeText(experimentCompleteMessage)
