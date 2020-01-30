@@ -1,3 +1,5 @@
+-*- coding: utf-8 -*-
+
 from __future__ import unicode_literals, print_function, division
 from psychopy import gui, visual, event, core, monitors
 from psychopy.tools.monitorunittools import posToPix
